@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "Generi"
+version = "0.1.0"
+description = "Bootstrap your docker projects effortlessly"
+authors = ["Nick Lehmann <nick@lehmann.sh>"]
+
+[tool.poetry.dependencies]
+python = ">=3.6"
+pyyaml = "^5.2"
+Jinja2 = "^2.10.3"
+docker = "^4.1.0"
+
+[tool.poetry.scripts]
+cli = "generi.cli:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

@@ -9,6 +9,7 @@ python = ">=3.6"
 pyyaml = "^5.2"
 Jinja2 = "^2.10.3"
 docker = "^4.1.0"
+pathos = "^0.2.5"
 
 [tool.poetry.scripts]
 cli = "generi.cli:main"

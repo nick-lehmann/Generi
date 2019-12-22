@@ -14,7 +14,7 @@ For example, say you are developing an app. You might want to build one docker i
 - Specify different parameter to form a build matrix
 - Generate Dockerfile for each combination
 - Build all variations of your image with one command
-- Push to the repository of your choice (not yet)
+- Push to the repository of your choice
 - Everything customisable using [Jinja](https://jinja.palletsprojects.com/en/2.10.x/)
 
 🛠️ Examples

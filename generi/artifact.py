@@ -1,7 +1,8 @@
 import os
-from typing import Dict
+from typing import Dict, Optional
+from collections import OrderedDict
 
-import docker
+from docker import DockerClient
 from docker.errors import BuildError
 from docker.models.images import Image
 from jinja2 import Template, Environment, FileSystemLoader
@@ -16,7 +17,9 @@ class DockerArtifact:
 
     image: Image
 
-    def __init__(self, parameters: dict, template_path: str,
+    ordered_parameters: Optional[list]
+
+    def __init__(self, parameters: OrderedDict, template_path: str,
                  output_dir: str, tag: str):
         self.template_path = os.path.normpath(
             Template(template_path).render(**parameters)
@@ -63,3 +66,26 @@ class DockerArtifact:
                     print(log['stream'].rstrip('\n'))
                 else:
                     print(log['errorDetail']['message'].rstrip('\n'))
+
+    def push(self, client: DockerClient):
+        repository, tag = self.tag.split(':', 1)
+        client.images.push(repository=repository, tag=tag)
+
+    @property
+    def templates(self) -> Dict[str, Template]:
+        """
+        Returns a dictionary with all templates that belong to an artifact.
+
+        The keys are the names of the files and the values are the templates to be rendered.
+        """
+        if os.path.isdir(self.template_path):
+            env = Environment(loader=FileSystemLoader(self.template_path))
+            return {
+                file: env.get_template(file)
+                for file in os.listdir(self.template_path)
+            }
+        else:
+            with open(self.template_path) as f:
+                return {
+                    os.path.basename(self.template_path): Template(f.read())
+                }

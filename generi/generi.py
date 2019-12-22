@@ -1,10 +1,15 @@
 import itertools
 import os
-from typing import List
+from typing import List, Dict
 
+import docker
+from pathos.pools import ProcessPool
 import yaml
 
 from .artifact import DockerArtifact
+from .optim import create_build_queue
+
+parallel = 4
 
 
 class Generi:
@@ -14,6 +19,8 @@ class Generi:
     schema_path: str
     tag: str
     _artifacts: List[DockerArtifact]
+
+    registry: Dict[str, str]
 
     def __init__(self, schema_path):
         self.schema_path = schema_path
@@ -27,6 +34,8 @@ class Generi:
             raw_data['output']
         )
         self.tag = raw_data['tag']
+
+        self.registry = raw_data.get('registry')
 
         self._artifacts = []
 
@@ -102,12 +111,18 @@ class Generi:
 
         return self._artifacts
 
-    def write(self):
-        """ Generate all files """
-        for artifact in self.artifacts:
-            artifact.write()
+    @property
+    def dockerfile(self):
+        with open(os.path.join(self.template_path, 'Dockerfile')) as dockerfile:
+            return dockerfile.readlines()
 
-    def build(self):
-        """ Build all artifacts """
-        for artifact in self.artifacts:
-            artifact.build()
+    @property
+    def parameter_ordering(self):
+        parameter_ordering = list()
+        for line in self.dockerfile:
+            parameter_ordering += [
+                parameter for parameter in self.parameters
+                if parameter in line and '{{' in line and parameter not in parameter_ordering
+            ]
+        return parameter_ordering
+

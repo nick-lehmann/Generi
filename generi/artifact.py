@@ -42,27 +42,7 @@ class DockerArtifact:
             with open(output_path, 'w+') as f:
                 f.write(content)
 
-    @property
-    def templates(self) -> Dict[str, Template]:
-        """
-        Returns a dictionary with all templates that belong to an artifact.
-
-        The keys are the names of the files and the values are the templates to be rendered.
-        """
-        if os.path.isdir(self.template_path):
-            env = Environment(loader=FileSystemLoader(self.template_path))
-            return {
-                file: env.get_template(file)
-                for file in os.listdir(self.template_path)
-            }
-        else:
-            with open(self.template_path) as f:
-                return {
-                    os.path.basename(self.template_path): Template(f.read())
-                }
-
-    def build(self):
-        client = docker.from_env()
+    def build(self, client: DockerClient):
         dockerfile = os.path.join(self.output_dir, 'Dockerfile')
 
         print(f'Start building image')

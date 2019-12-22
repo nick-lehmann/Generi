@@ -30,6 +30,36 @@ class Generi:
 
         self._artifacts = []
 
+    def write(self):
+        """ Generate all files """
+        for artifact in self.artifacts:
+            artifact.write()
+
+    def build(self):
+        """ Build all artifacts """
+        client = docker.from_env()
+        queue = create_build_queue(self.artifacts, self.parameter_ordering)
+
+        if parallel > 1:
+            print(f'Start parallel build with {parallel} process at a time')
+            with ProcessPool(parallel) as p:
+                p.map(DockerArtifact.build, queue, [client] * len(queue))
+        else:
+            for artifact in queue:
+                artifact.build()
+
+    def push(self):
+        """ Push all images to your registry """
+        client = docker.from_env()
+        client.login(
+            username=self.registry['username'],
+            password=self.registry.get('password', input('Please enter the password for this registry: ')),
+            registry=self.registry.get('host', '')
+        )
+
+        for artifact in self.artifacts:
+            artifact.push(client)
+
     @property
     def parameter_matrix(self):
         parameter_names = list(self.parameters.keys())

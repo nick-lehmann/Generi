@@ -6,3 +6,4 @@ def main():
     generator = Generi(sys.argv[1])
     generator.write()
     generator.build()
+    generator.push()

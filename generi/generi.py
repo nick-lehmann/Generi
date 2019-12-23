@@ -3,7 +3,6 @@ import itertools
 import os
 from typing import List, Dict
 
-import docker
 import aiodocker
 import yaml
 
@@ -67,20 +66,32 @@ class Generi:
         loop.run_until_complete(self._build_parallel(loop))
         loop.close()
 
-    def push(self):
-        """ Push all images to your registry """
-        client = docker.from_env()
-        client.login(
-            username=self.registry['username'],
-            password=self.registry.get('password', input('Please enter the password for this registry: ')),
-            registry=self.registry.get('host', '')
-        )
+    async def _push_parallel(self):
+        client = aiodocker.Docker()
+        try:
+            password = self.registry['password']
+        except IndexError:
+            password = input('Please enter the password for this registry: ')
+
+        authentication = {
+            'username': self.registry['username'],
+            'password': password
+        }
 
         for artifact in self.artifacts:
-            artifact.push(client)
+            await artifact.push(client, authentication)
+
+        await client.close()
+
+    def push(self):
+        """ Push all images to your registry """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._push_parallel())
+        loop.close()
 
     @property
     def parameter_matrix(self):
+        """ Matrix of all parameters """
         parameter_names = list(self.parameters.keys())
         matrix = itertools.product(*self.parameters.values())
 
@@ -111,6 +122,9 @@ class Generi:
 
     @property
     def artifacts(self) -> List[DockerArtifact]:
+        """
+        Return the list of artifacts.
+        """
         if not self._artifacts:
             self._artifacts = [DockerArtifact(
                 parameters=mix,
@@ -122,12 +136,20 @@ class Generi:
         return self._artifacts
 
     @property
-    def dockerfile(self):
+    def dockerfile(self) -> List[str]:
+        """
+        Return the used dockerfile as lines.
+        """
         with open(os.path.join(self.template_path, 'Dockerfile')) as dockerfile:
             return dockerfile.readlines()
 
     @property
-    def parameter_ordering(self):
+    def parameter_ordering(self) -> List[str]:
+        """
+        Return the order in which the parameters occur in the given dockerfile.
+
+        This is needed for optimising the order in which the images are built.
+        """
         parameter_ordering = list()
         for line in self.dockerfile:
             parameter_ordering += [

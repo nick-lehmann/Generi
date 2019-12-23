@@ -1,6 +1,5 @@
 import os
 from typing import Dict, Optional
-from collections import OrderedDict
 
 import aiodocker
 from jinja2 import Template, Environment, FileSystemLoader
@@ -16,11 +15,9 @@ class DockerArtifact:
     output_dir: str
     tag: str
 
-    image: object
-
     ordered_parameters: Optional[list]
 
-    def __init__(self, parameters: OrderedDict, template_path: str,
+    def __init__(self, parameters: dict, template_path: str,
                  output_dir: str, tag: str):
         self.template_path = os.path.normpath(
             Template(template_path).render(**parameters)
@@ -47,6 +44,7 @@ class DockerArtifact:
                 f.write(content)
 
     async def build(self, client: aiodocker.Docker):
+        """ Build image """
         f = tempfile.NamedTemporaryFile()
         tar = tarfile.open(mode="w:gz", fileobj=f)
         context_path = self.output_dir + '/'
@@ -63,9 +61,13 @@ class DockerArtifact:
         print(f'Finished building {self.tag}')
         tar.close()
 
-    def push(self, client: aiodocker.Docker):
+    async def push(self, client: aiodocker.Docker, auth: dict):
+        """ Push image to registry """
+        print(f'Start pushing {self.tag}')
         repository, tag = self.tag.split(':', 1)
-        client.images.push(repository=repository, tag=tag)
+
+        await client.images.push(name=repository, tag=tag, auth=auth)
+        print(f'Finished pushing {self.tag}')
 
     @property
     def templates(self) -> Dict[str, Template]:

@@ -2,10 +2,11 @@ import os
 from typing import Dict, Optional
 from collections import OrderedDict
 
-from docker import DockerClient
-from docker.errors import BuildError
-from docker.models.images import Image
+import aiodocker
 from jinja2 import Template, Environment, FileSystemLoader
+
+import tempfile
+import tarfile
 
 
 class DockerArtifact:
@@ -15,7 +16,7 @@ class DockerArtifact:
     output_dir: str
     tag: str
 
-    image: Image
+    image: object
 
     ordered_parameters: Optional[list]
 
@@ -45,29 +46,24 @@ class DockerArtifact:
             with open(output_path, 'w+') as f:
                 f.write(content)
 
-    def build(self, client: DockerClient):
-        dockerfile = os.path.join(self.output_dir, 'Dockerfile')
+    async def build(self, client: aiodocker.Docker):
+        f = tempfile.NamedTemporaryFile()
+        tar = tarfile.open(mode="w:gz", fileobj=f)
+        context_path = self.output_dir + '/'
 
-        print(f'Start building image')
-        print(f'- Tag:        {self.tag}')
-        print(f'- Context:    {self.output_dir}')
-        print(f'- Dockerfile: {dockerfile}')
+        print(f'Start building {self.tag}')
 
-        try:
-            self.image, logs = client.images.build(
-                path=self.output_dir,
-                dockerfile=dockerfile,
-                tag=self.tag
-            )
-        except BuildError as e:
-            print(f'Building image {self.tag} failed')
-            for log in e.build_log:
-                if 'errorDetail' not in log:
-                    print(log['stream'].rstrip('\n'))
-                else:
-                    print(log['errorDetail']['message'].rstrip('\n'))
+        for file in os.listdir(context_path):
+            tar.add(os.path.join(context_path, file), arcname=file)
 
-    def push(self, client: DockerClient):
+        tar.close()
+        f.seek(0)
+
+        await client.images.build(fileobj=f, encoding="gzip", tag=self.tag)
+        print(f'Finished building {self.tag}')
+        tar.close()
+
+    def push(self, client: aiodocker.Docker):
         repository, tag = self.tag.split(':', 1)
         client.images.push(repository=repository, tag=tag)
 

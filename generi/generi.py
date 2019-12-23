@@ -1,9 +1,10 @@
+import asyncio
 import itertools
 import os
 from typing import List, Dict
 
 import docker
-from pathos.pools import ProcessPool
+import aiodocker
 import yaml
 
 from .artifact import DockerArtifact
@@ -44,18 +45,27 @@ class Generi:
         for artifact in self.artifacts:
             artifact.write()
 
-    def build(self):
-        """ Build all artifacts """
-        client = docker.from_env()
+    async def _build_parallel(self, loop: asyncio.events.AbstractEventLoop):
+        client = aiodocker.Docker()
         queue = create_build_queue(self.artifacts, self.parameter_ordering)
+        build_tasks = set()
 
-        if parallel > 1:
-            print(f'Start parallel build with {parallel} process at a time')
-            with ProcessPool(parallel) as p:
-                p.map(DockerArtifact.build, queue, [client] * len(queue))
-        else:
-            for artifact in queue:
-                artifact.build()
+        for job in queue:
+            if len(build_tasks) >= parallel:
+                _done, build_tasks = await asyncio.wait(
+                    build_tasks,
+                    return_when=asyncio.FIRST_COMPLETED
+                )
+            build_tasks.add(loop.create_task(job.build(client)))
+
+        await asyncio.wait(build_tasks)
+        await client.close()
+
+    def build(self):
+        """ Build all artifacts in parallel """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._build_parallel(loop))
+        loop.close()
 
     def push(self):
         """ Push all images to your registry """

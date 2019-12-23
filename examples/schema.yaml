@@ -1,0 +1,18 @@
+parameters:
+  python_version:
+    - 2.7
+    - 3.5
+    - 3.6
+    - 3.7
+  operating_system:
+    - buster
+    - alpine
+
+template: templates
+output: "output/{{ python_version }}/{{ operating_system }}"
+
+tag: "nicklehmann/myapplication:py{{ python_version }}-{{ operating_system }}"
+
+registry:
+  username: nicklehmann
+  password: "483800a8-c6ba-487b-bbc8-a2bc254ef887"

@@ -3,3 +3,4 @@ poetry.lock
 sample/
 output/
 examples/output/
+*.egg-info

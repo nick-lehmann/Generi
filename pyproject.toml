@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "Generi"
 version = "0.1.0"
-description = "Bootstrap your docker projects effortlessly"
+description = "Manage huge sets of Docker images using matrix builds"
 authors = ["Nick Lehmann <nick@lehmann.sh>"]
 
 [tool.poetry.dependencies]

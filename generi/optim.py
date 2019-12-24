@@ -53,6 +53,21 @@ def order_parameters_of_jobs(jobs: DockerArtifacts, ordering: List[str]) -> Dock
         ]
 
 
+def parameter_order(config) -> List[str]:
+    """
+    Return the order in which the parameters occur in the given dockerfile.
+
+    This is needed for optimising the order in which the images are built.
+    """
+    order = list()
+    for line in config.dockerfile:
+        order += [
+            parameter for parameter in config.parameters
+            if parameter in line and '{{' in line and parameter not in order
+        ]
+    return order
+
+
 def create_build_queue(jobs: DockerArtifacts, ordering: List[str]):
     """
     Create a build queue that pumps will initially pump

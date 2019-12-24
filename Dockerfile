@@ -1,4 +1,4 @@
-FROM nicklehmann/poetry:py3.6-preview-alpine
+FROM nicklehmann/poetry:py3.8-preview-alpine
 
 WORKDIR /app
 

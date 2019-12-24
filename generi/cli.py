@@ -1,9 +1,7 @@
 import sys
-from .generi import Generi
+from .config import Config
 
 
 def main():
-    generator = Generi(sys.argv[1])
-    generator.write()
-    generator.build()
-    generator.push()
+    config = Config.load(sys.argv[1])
+    print(config)

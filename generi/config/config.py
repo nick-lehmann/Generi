@@ -5,24 +5,7 @@ from typing import Optional, List
 
 import yaml
 
-
-@dataclass
-class Registry:
-    username: str
-    host: str = None
-    password: str = None
-
-    @staticmethod
-    def load(raw: dict) -> Optional['Registry']:
-        try:
-            registry = raw['registry']
-            return Registry(
-                host=registry.get('host'),
-                username=registry['username'],
-                password=registry.get('password')
-            )
-        except IndexError:
-            return None
+from .registry import Registry
 
 
 @dataclass
@@ -33,9 +16,11 @@ class Config:
     tag: str
     registry: Optional[Registry]
     schema_path: str
+    parallel: int = 4
 
     @staticmethod
-    def load(schema_path) -> 'Config':
+    def load(schema_path: str) -> 'Config':
+        """ Read in a config from a given schema file """
         with open(schema_path) as f:
             raw = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -70,6 +55,14 @@ class Config:
         """
         return os.path.dirname(
             os.path.join(os.getcwd(), self.schema_path)
+        )
+
+    @property
+    def output_path(self):
+        """ Absolute path to where the rendered files should be written """
+        return os.path.join(
+            self.schema_directory,
+            self.output
         )
 
     @property

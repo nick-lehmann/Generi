@@ -13,7 +13,7 @@ class Config:
     parameters: dict
     template: str
     output: str
-    tag: str
+    name: str
     registry: Optional[Registry]
     schema_path: str
     parallel: int = 4
@@ -30,7 +30,7 @@ class Config:
                 parameters=raw['parameters'],
                 template=raw['template'],
                 output=raw['output'],
-                tag=raw['tag'],
+                name=raw['image'],
                 registry=Registry.load(raw)
             )
         except IndexError:

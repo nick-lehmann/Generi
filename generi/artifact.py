@@ -10,25 +10,25 @@ from .config import Config
 
 
 class DockerArtifact:
+    config: Config
     parameters: dict
-
+    name: str
     template_path: str
-    output_dir: str
-    tag: str
+    output_path: str
 
     ordered_parameters: Optional[list]
 
-    def __init__(self, parameters: dict, template_path: str,
-                 output_dir: str, tag: str):
-        self.template_path = os.path.normpath(
-            Template(template_path).render(**parameters)
-        )
-        self.output_dir = os.path.normpath(
-            Template(output_dir).render(**parameters)
-        )
-        self.tag = Template(tag).render(**parameters)
-
+    def __init__(self, parameters: dict, config: Config):
+        self.config = config
         self.parameters = parameters
+
+        self.template_path = os.path.normpath(
+            Template(config.template_path).render(**parameters)
+        )
+        self.output_path = os.path.normpath(
+            Template(config.output).render(**parameters)
+        )
+        self.name = Template(config.name).render(**parameters)
 
     def write(self):
         """
@@ -37,10 +37,10 @@ class DockerArtifact:
         for file, template in self.templates.items():
             content = template.render(**self.parameters)
 
-            if not os.path.exists(self.output_dir):
-                os.makedirs(self.output_dir)
+            if not os.path.exists(self.output_path):
+                os.makedirs(self.output_path)
 
-            output_path = os.path.join(self.output_dir, file)
+            output_path = os.path.join(self.output_path, file)
             with open(output_path, 'w+') as f:
                 f.write(content)
 
@@ -48,11 +48,12 @@ class DockerArtifact:
         """ Build image """
         f = tempfile.NamedTemporaryFile()
         tar = tarfile.open(mode="w:gz", fileobj=f)
-        context_path = self.output_dir + '/'
+        context_path = self.output_path + '/'
 
-        print(f'Start building {self.tag}')
+        print(f'Start building {self.tag} from {context_path}')
 
         for file in os.listdir(context_path):
+            print(f'Adding {os.path.join(context_path, file)}')
             tar.add(os.path.join(context_path, file), arcname=file)
 
         tar.close()
@@ -65,9 +66,8 @@ class DockerArtifact:
     async def push(self, client: aiodocker.Docker, auth: dict):
         """ Push image to registry """
         print(f'Start pushing {self.tag}')
-        repository, tag = self.tag.split(':', 1)
 
-        await client.images.push(name=repository, tag=tag, auth=auth)
+        await client.images.push(name=self.repository, tag=self.tag, auth=auth)
         print(f'Finished pushing {self.tag}')
 
     @property
@@ -89,15 +89,20 @@ class DockerArtifact:
                     os.path.basename(self.template_path): Template(f.read())
                 }
 
+    @property
+    def repository(self):
+        return self.name.split(':', 1)[0]
+
+    @property
+    def tag(self):
+        return self.name.split(':', 1)[1]
+
     @staticmethod
     def load(config: Config) -> List['DockerArtifact']:
         """
         Return the list of artifacts.
         """
         return [DockerArtifact(
-            parameters=mix,
-            template_path=config.template_path,
-            output_dir=config.output_path,
-            tag=config.tag
-        ) for mix in config.parameter_matrix]
-
+            parameters=combination,
+            config=config
+        ) for combination in config.parameter_matrix]

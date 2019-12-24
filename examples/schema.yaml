@@ -10,8 +10,7 @@ parameters:
 
 template: templates
 output: "output/{{ python_version }}/{{ operating_system }}"
-
-tag: "nicklehmann/myapplication:py{{ python_version }}-{{ operating_system }}"
+image: "nicklehmann/myapplication:py{{ python_version }}-{{ operating_system }}"
 
 registry:
   username: nicklehmann

@@ -1,11 +1,12 @@
 import os
-from typing import Dict, Optional
+import tarfile
+import tempfile
+from typing import Dict, Optional, List
 
 import aiodocker
 from jinja2 import Template, Environment, FileSystemLoader
 
-import tempfile
-import tarfile
+from .config import Config
 
 
 class DockerArtifact:
@@ -87,3 +88,16 @@ class DockerArtifact:
                 return {
                     os.path.basename(self.template_path): Template(f.read())
                 }
+
+    @staticmethod
+    def load(config: Config) -> List['DockerArtifact']:
+        """
+        Return the list of artifacts.
+        """
+        return [DockerArtifact(
+            parameters=mix,
+            template_path=config.template_path,
+            output_dir=config.output_path,
+            tag=config.tag
+        ) for mix in config.parameter_matrix]
+

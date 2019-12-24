@@ -1,7 +1,14 @@
-import sys
-from .config import Config
+import fire
+from .commands import (
+    build,
+    push,
+    write
+)
 
 
 def main():
-    config = Config.load(sys.argv[1])
-    print(config)
+    fire.Fire({
+        'build': build,
+        'push': push,
+        'write': write
+    })

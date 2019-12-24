@@ -68,12 +68,12 @@ def parameter_order(config) -> List[str]:
     return order
 
 
-def create_build_queue(jobs: DockerArtifacts, ordering: List[str]):
+def create_build_queue(jobs: DockerArtifacts, order: List[str]):
     """
     Create a build queue that pumps will initially pump
     as many layers into cache as possible.
     """
-    order_parameters_of_jobs(jobs, ordering)
+    order_parameters_of_jobs(jobs, order)
 
     queue = [jobs.pop(0)]
 

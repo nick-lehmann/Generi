@@ -5,11 +5,12 @@ WORKDIR /app
 # Needed to test the successful building of all images
 RUN apk add docker build-base
 
-# Install python dependencies
-COPY pyproject.toml ./
-RUN poetry install
+# Change permissions of site-packages to enable installing
+# the project itself into it.
+RUN chown -R 1000:1000 /usr/local/lib/python3.8/site-packages/
 
-# Copy source code
+# Install python dependencies
 COPY . .
+RUN poetry install
 
 CMD ["ash"]

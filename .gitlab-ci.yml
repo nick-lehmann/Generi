@@ -37,7 +37,7 @@ deploy-doc:
   stage: Deploy
   environment:
     name: Contabo
-    url: https://nicklehmann.sh
+    url: https://generi.nicklehmann.sh
   before_script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
   script:

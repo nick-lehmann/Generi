@@ -29,6 +29,8 @@ $ pipenv install generi
 ✈️ Quickstart
 =============
 
+`Generi` can be configured using a simple yaml file that defines your matrix build. 
+
 *schema.yaml*
 
 ```yaml
@@ -52,13 +54,13 @@ registry:
 
 *templates/Dockerfile*
 
-````dockerfile
+```dockerfile
 FROM python:{{ python_version }}-{{ operating_system }}
 
 COPY main.py main.py
 
 CMD ["python", "main.py"]
-````
+```
 
 First, render your dockerfiles by running
 

@@ -1,0 +1,48 @@
+stages:
+  - Documentation
+  - Build
+  - Docs
+
+
+generate-docs:
+  image: nicklehmann/poetry:py3.8-preview-alpine
+  stage: Build
+  before_script:
+    - apk add build-base
+    - poetry install --dev
+  script:
+    - invoke docs
+  artifacts:
+    paths:
+      - dist/docs
+
+build-doc:
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  stage: Doc-Build
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --context $CI_PROJECT_DIR/docs/
+      --dockerfile $CI_PROJECT_DIR/docs/Dockerfile
+      --destination $CI_REGISTRY_IMAGE/docs
+  dependencies:
+    - generate-docs
+
+
+deploy-doc:
+  image: alpine/helm:3.0.2
+  stage: Deploy
+  environment:
+    name: Contabo
+    url: https://nicklehmann.sh
+  before_script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+  script:
+    - env
+    - helm version
+    - helm ls
+    - helm delete generi-docs || true
+    - helm install -n generi -f docs/deploy.yaml testo-docs bitnami/nginx

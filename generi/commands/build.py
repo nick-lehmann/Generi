@@ -1,5 +1,6 @@
 import asyncio
 import aiodocker
+from pathlib import Path
 
 from ..artifact import DockerArtifact
 from ..config import Config
@@ -28,6 +29,7 @@ async def _build_parallel(config: Config, loop: asyncio.events.AbstractEventLoop
 
 def build(config: str):
     """ Build all artifacts in parallel """
+    config = Path(config)
     config = Config.load(config)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_build_parallel(config, loop))

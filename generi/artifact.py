@@ -2,6 +2,7 @@ import os
 import tarfile
 import tempfile
 from typing import Dict, Optional, List
+from pathlib import Path
 
 import aiodocker
 from jinja2 import Template, Environment, FileSystemLoader
@@ -13,8 +14,8 @@ class DockerArtifact:
     config: Config
     parameters: dict
     name: str
-    template_path: str
-    output_path: str
+    template_path: Path
+    output_path: Path
 
     ordered_parameters: Optional[list]
 
@@ -22,38 +23,38 @@ class DockerArtifact:
         self.config = config
         self.parameters = parameters
 
-        self.template_path = os.path.normpath(
-            Template(config.template_path).render(**parameters)
+        self.template_path = config.base_path / os.path.normpath(
+            Template(config.template).render(**parameters)
         )
-        self.output_path = os.path.normpath(
+
+        self.output_path = config.base_path / os.path.normpath(
             Template(config.output).render(**parameters)
         )
+
         self.name = Template(config.name).render(**parameters)
 
     def write(self):
-        """
-        Render all templates and write them to their desired path.
-        """
+        """ Render and write all templates to their desired path. """
+        print(f'Write {self.tag} to {self.output_path}')
         for file, template in self.templates.items():
             content = template.render(**self.parameters)
 
-            if not os.path.exists(self.output_path):
-                os.makedirs(self.output_path)
+            if not self.output_path.exists():
+                os.makedirs(str(self.output_path))
 
-            output_path = os.path.join(self.output_path, file)
-            with open(output_path, 'w+') as f:
+            with (self.output_path / file).open('w+') as f:
                 f.write(content)
 
     async def build(self, client: aiodocker.Docker):
         """ Build image """
         f = tempfile.NamedTemporaryFile()
         tar = tarfile.open(mode="w:gz", fileobj=f)
-        context_path = self.output_path + '/'
+        context_path = self.output_path
 
         print(f'Start building {self.name} from {context_path}')
 
-        for file in os.listdir(context_path):
-            tar.add(os.path.join(context_path, file), arcname=file)
+        for file in context_path.iterdir():
+            tar.add(file, arcname=file.name)
 
         tar.close()
         f.seek(0)
@@ -76,16 +77,16 @@ class DockerArtifact:
 
         The keys are the names of the files and the values are the templates to be rendered.
         """
-        if os.path.isdir(self.template_path):
-            env = Environment(loader=FileSystemLoader(self.template_path))
+        if self.template_path.is_dir():
+            env = Environment(loader=FileSystemLoader(str(self.template_path)))
             return {
-                file: env.get_template(file)
-                for file in os.listdir(self.template_path)
+                file.name: env.get_template(file.name)
+                for file in self.template_path.iterdir()
             }
         else:
-            with open(self.template_path) as f:
+            with self.template_path.open() as f:
                 return {
-                    os.path.basename(self.template_path): Template(f.read())
+                    self.template_path.name: Template(f.read())
                 }
 
     @property

@@ -1,32 +1,50 @@
-import os
 from dataclasses import dataclass
 import itertools
-from typing import Optional, List
+from pathlib import Path
+from typing import Optional, List, Dict
 
 import yaml
 
 from .registry import Registry
 
 
+# Type for strings that still have to be rendered
+# using jinja
+JinjaString = str
+
+
 @dataclass
 class Config:
+    # Set of parameters configured in the yaml file
     parameters: dict
-    template: str
-    output: str
-    name: str
+
+    # Path to the template, relative to config file
+    template: JinjaString
+
+    # Path to the output location, relative to config file
+    output: JinjaString
+
+    # Name of the image
+    name: JinjaString
+
+    # Registry to which the images should be pushed
     registry: Optional[Registry]
-    schema_path: str
+
+    # Path of the config file
+    path: Path
+
+    # Amount of images that are built in parallel
     parallel: int = 4
 
     @staticmethod
-    def load(schema_path: str) -> 'Config':
-        """ Read in a config from a given schema file """
-        with open(schema_path) as f:
+    def load(path: Path) -> 'Config':
+        """ Read in a config from a given config file """
+        with path.open() as f:
             raw = yaml.load(f, Loader=yaml.FullLoader)
 
         try:
             return Config(
-                schema_path=schema_path,
+                path=path,
                 parameters=raw['parameters'],
                 template=raw['template'],
                 output=raw['output'],
@@ -37,7 +55,7 @@ class Config:
             raise ValueError('Your schema is invalid')
 
     @property
-    def parameter_matrix(self):
+    def parameter_matrix(self) -> List[Dict[str, str]]:
         """ Matrix of all parameters """
         parameter_names = list(self.parameters.keys())
         matrix = itertools.product(*self.parameters.values())
@@ -48,38 +66,18 @@ class Config:
         } for mix in matrix]
 
     @property
-    def schema_directory(self):
+    def base_path(self) -> Path:
         """
-        Serves as the base for all paths specified
-        in the schema.
+        Directory in which the config is stored. Serves as the base for all
+        paths defined inside the config file.
         """
-        return os.path.dirname(
-            os.path.join(os.getcwd(), self.schema_path)
-        )
-
-    @property
-    def output_path(self):
-        """ Absolute path to where the rendered files should be written """
-        return os.path.join(
-            self.schema_directory,
-            self.output
-        )
-
-    @property
-    def template_path(self):
-        """
-        Absolute path to the templates.
-        """
-        return os.path.join(
-            self.schema_directory,
-            self.template
-        )
+        return (Path.cwd() / self.path).parent
 
     @property
     def dockerfile(self) -> List[str]:
         """
         Return the used dockerfile as lines.
         """
-        with open(os.path.join(self.template_path, 'Dockerfile')) as dockerfile:
+        with (self.base_path / self.template / 'Dockerfile').open() as dockerfile:
             return dockerfile.readlines()
 

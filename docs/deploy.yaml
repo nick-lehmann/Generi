@@ -1,0 +1,72 @@
+image:
+  registry: registry.nicklehmann.sh
+  repository: opensource/generi/docs
+  tag: latest
+  pullPolicy: Always
+  pullSecrets:
+    - regcred
+
+replicaCount: 1
+
+service:
+  type: LoadBalancer
+  port: 80
+  nodePorts:
+    http: ""
+  externalTrafficPolicy: Cluster
+
+ingress:
+  enabled: true
+  certManager: false
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  hosts:
+    - name: generi.nicklehmann.sh
+      path: /
+  tls: false
+  secrets:
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  timeoutSeconds: 3
+  periodSeconds: 5
+
+podAnnotations: {}
+nodeAffinity: {}
+podAffinity: {}
+podAntiAffinity: soft
+nodeSelector: {}
+tolerations: {}
+
+metrics:
+  enabled: false
+  image:
+    registry: docker.io
+    repository: bitnami/nginx-exporter
+    tag: 0.4.2-debian-9-r43
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ##
+    # pullSecrets:
+    #   - myRegistryKeySecretName
+  ## Metrics exporter pod Annotation and Labels
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9113"
+    ## Metrics exporter resource requests and limits
+    ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+  # resources: {}

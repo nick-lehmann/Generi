@@ -9,7 +9,7 @@ generate-docs:
   stage: Generate
   before_script:
     - apk add build-base
-    - poetry install --dev
+    - poetry install
   script:
     - invoke docs
   artifacts:

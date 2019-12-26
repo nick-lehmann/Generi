@@ -35,11 +35,11 @@ deploy-doc:
   environment:
     name: Contabo
     url: https://generi.nicklehmann.sh
+  variables:
+    HELM_RELEASE: generi-docs
+    HELM_NAMESPACE: generi
   before_script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
   script:
-    - env
-    - helm version
-    - helm ls
-    - helm delete generi-docs || true
-    - helm install -n generi -f docs/deploy.yaml generi-docs bitnami/nginx
+    - helm delete -n $HELM_NAMESPACE $HELM_RELEASE || true
+    - helm install -n $HELM_NAMESPACE -f docs/deploy.yaml $HELM_RELEASE bitnami/nginx

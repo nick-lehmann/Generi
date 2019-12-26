@@ -50,17 +50,16 @@ class DockerArtifact:
         tar = tarfile.open(mode="w:gz", fileobj=f)
         context_path = self.output_path + '/'
 
-        print(f'Start building {self.tag} from {context_path}')
+        print(f'Start building {self.name} from {context_path}')
 
         for file in os.listdir(context_path):
-            print(f'Adding {os.path.join(context_path, file)}')
             tar.add(os.path.join(context_path, file), arcname=file)
 
         tar.close()
         f.seek(0)
 
-        await client.images.build(fileobj=f, encoding="gzip", tag=self.tag)
-        print(f'Finished building {self.tag}')
+        await client.images.build(fileobj=f, encoding="gzip", tag=self.name)
+        print(f'Finished building {self.name}')
         tar.close()
 
     async def push(self, client: aiodocker.Docker, auth: dict):

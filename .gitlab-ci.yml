@@ -1,12 +1,12 @@
 stages:
-  - Documentation
+  - Generate
   - Build
-  - Docs
+  - Deploy
 
 
 generate-docs:
   image: nicklehmann/poetry:py3.8-preview-alpine
-  stage: Build
+  stage: Generate
   before_script:
     - apk add build-base
     - poetry install --dev
@@ -20,7 +20,7 @@ build-doc:
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
-  stage: Doc-Build
+  stage: Build
   script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >

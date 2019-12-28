@@ -1,0 +1,14 @@
+parameters:
+  python_version:
+    - 3.7
+    - 3.8
+  operating_system:
+    - alpine
+#    - buster-slim
+
+template: templates
+output: "output/{{ python_version }}/{{ operating_system }}"
+image: "nicklehmann/generi:py{{ python_version }}-{{ operating_system }}"
+
+registry:
+  username: nicklehmann

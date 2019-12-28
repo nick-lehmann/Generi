@@ -11,6 +11,6 @@ RUN chown -R 1000:1000 /usr/local/lib/python3.8/site-packages/
 
 # Install python dependencies
 COPY . .
-RUN poetry install
+RUN poetry update && poetry install
 
 CMD ["ash"]

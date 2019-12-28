@@ -1,11 +1,35 @@
 [tool.poetry]
 name = "Generi"
-version = "0.1.0"
+version = "0.2.0"
 description = "Manage huge sets of Docker images using matrix builds"
 authors = ["Nick Lehmann <nick@lehmann.sh>"]
+license = "MIT"
+readme = "README.md"
+documentation = "https://generi.nicklehmann.sh"
+repository = "https://github.com/nick-lehmann/Generi"
+
+keywords = [
+    "docker",
+    "CI",
+    "templating"
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed"
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/nick-lehmann/Generi/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.6"
+python = ">=3.7"
 pyyaml = "^5.2"
 Jinja2 = "^2.10.3"
 aiodocker = "^0.17.0"

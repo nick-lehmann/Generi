@@ -1,13 +1,13 @@
 import os
-import tarfile
-import tempfile
 from typing import Dict, Optional, List
 from pathlib import Path
 
 import aiodocker
+from aiodocker.exceptions import DockerError
 from jinja2 import Template, Environment, FileSystemLoader
 
 from .config import Config
+from .context import create_tar
 
 
 class DockerArtifact:
@@ -23,13 +23,19 @@ class DockerArtifact:
         self.config = config
         self.parameters = parameters
 
-        self.template_path = config.base_path / os.path.normpath(
+        self.template_path = (
+            config.base_path /
             Template(config.template).render(**parameters)
-        )
+        ).resolve()
 
         self.output_path = config.base_path / os.path.normpath(
             Template(config.output).render(**parameters)
         )
+
+        self.context_path = (
+            config.base_path /
+            Template(config.context).render(**parameters)
+        ).resolve() if config.context else self.output_path
 
         self.name = Template(config.name).render(**parameters)
 
@@ -47,21 +53,31 @@ class DockerArtifact:
 
     async def build(self, client: aiodocker.Docker):
         """ Build image """
-        f = tempfile.NamedTemporaryFile()
-        tar = tarfile.open(mode="w:gz", fileobj=f)
-        context_path = self.output_path
+        f = create_tar(self.context_path)
 
-        print(f'Start building {self.name} from {context_path}')
+        dockerfile_path = self.output_path / 'Dockerfile'
+        if not dockerfile_path.exists():
+            print(f'There is no dockerfile in {self.output_path}')
+            pass
 
-        for file in context_path.iterdir():
-            tar.add(file, arcname=file.name)
+        relative_dockerfile_path = dockerfile_path.relative_to(self.context_path)
 
-        tar.close()
-        f.seek(0)
+        try:
+            # print(f'Start building {self.name}')
+            await client.images.build(
+                tag=self.name,
+                fileobj=f,
+                path_dockerfile=relative_dockerfile_path,
+                encoding="gzip",
+            )
+        except DockerError as e:
+            print(f'Error building image {self.name}')
+            print(f'> {e.message}')
+        else:
+            # print(f'Finished building {self.name}')
+            pass
 
-        await client.images.build(fileobj=f, encoding="gzip", tag=self.name)
-        print(f'Finished building {self.name}')
-        tar.close()
+        return self
 
     async def push(self, client: aiodocker.Docker, auth: dict):
         """ Push image to registry """

@@ -21,6 +21,9 @@ class Config:
     # Path to the template, relative to config file
     template: JinjaString
 
+    # Docker build context
+    context: Optional[JinjaString]
+
     # Path to the output location, relative to config file
     output: JinjaString
 
@@ -47,6 +50,7 @@ class Config:
                 path=path,
                 parameters=raw['parameters'],
                 template=raw['template'],
+                context=raw.get('context'),
                 output=raw['output'],
                 name=raw['image'],
                 registry=Registry.load(raw)

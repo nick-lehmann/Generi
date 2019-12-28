@@ -34,6 +34,7 @@ pyyaml = "^5.2"
 Jinja2 = "^2.10.3"
 aiodocker = "^0.17.0"
 fire = "^0.2.1"
+colorama = "*"
 
 [tool.poetry.dev-dependencies]
 sphinx = "^2.3.1"

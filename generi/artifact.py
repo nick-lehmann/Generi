@@ -122,3 +122,6 @@ class DockerArtifact:
             parameters=combination,
             config=config
         ) for combination in config.parameter_matrix]
+
+    def __str__(self):
+        return self.name

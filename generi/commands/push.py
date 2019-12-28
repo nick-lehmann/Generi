@@ -1,5 +1,6 @@
 import asyncio
 import aiodocker
+from pathlib import Path
 
 from ..artifact import DockerArtifact
 from ..config import Config
@@ -22,6 +23,7 @@ async def _push_parallel(config: Config):
 
 def push(config: str):
     """ Push all images to your registry """
+    config = Path(config)
     config = Config.load(config)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_push_parallel(config))

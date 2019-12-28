@@ -29,3 +29,11 @@ def docs(context, image=False):
 
     if image:
         subprocess.run('docker build -t nicklehmann/generi_docs -f docs/Dockerfile .', shell=True)
+
+
+@task()
+def clear(context):
+    context.run(
+        'docker rmi -f $(docker images --filter=reference="*/my*" -q)',
+        shell='/bin/ash'
+    )

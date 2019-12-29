@@ -81,10 +81,7 @@ class DockerArtifact:
 
     async def push(self, client: aiodocker.Docker, auth: dict):
         """ Push image to registry """
-        print(f'Start pushing {self.tag}')
-
         await client.images.push(name=self.repository, tag=self.tag, auth=auth)
-        print(f'Finished pushing {self.tag}')
 
     @property
     def templates(self) -> Dict[str, Template]:

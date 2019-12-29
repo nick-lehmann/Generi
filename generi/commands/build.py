@@ -23,7 +23,7 @@ async def _build_parallel(config: Config, loop: asyncio.events.AbstractEventLoop
     build_tasks = set()
 
     lines = [
-        f'{len(queue)} images will be built'
+        f'{len(queue)} images will be built, {config.parallel} at a time'
     ] + [job_pending.format(job) for job in queue]
 
     with Status(lines) as status:

@@ -4,6 +4,12 @@ from pathlib import Path
 
 from ..artifact import DockerArtifact
 from ..config import Config
+from ..console import Status
+
+
+PENDING = '⏳ Pending: {}'
+RUNNING = '⏫ Pushing: {}'
+FINISHED = '✅ Finished: {}'
 
 
 async def _push_parallel(config: Config):
@@ -15,8 +21,17 @@ async def _push_parallel(config: Config):
         'password': config.registry.get_password()
     }
 
-    for artifact in artifacts:
-        await artifact.push(client, authentication)
+    lines = [
+        f'{len(artifacts)} image will be pushed'
+    ] + [PENDING.format(artifact) for artifact in artifacts]
+
+    with Status(lines) as status:
+        for index, artifact in enumerate(artifacts, 1):
+            status[index] = RUNNING.format(artifact)
+            await artifact.push(client, authentication)
+            status.cursor.down(1)
+            status.cursor.up(1)
+            status[index] = FINISHED.format(artifact)
 
     await client.close()
 

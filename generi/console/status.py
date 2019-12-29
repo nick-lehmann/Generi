@@ -1,3 +1,5 @@
+import signal
+import sys
 from typing import List
 from .cursor import Cursor
 
@@ -18,6 +20,7 @@ class Status:
             self.cursor.down(1)
 
         self.cursor.hide()
+        signal.signal(signal.SIGINT, self.abort)
 
     def __getitem__(self, key: str):
         return self.lines[key]
@@ -37,3 +40,9 @@ class Status:
 
     def __exit__(self, type, value, traceback):
         del self
+
+    def abort(self, sig, frame):
+        self.cursor.move_to_line(len(self.lines))
+        self.cursor.show()
+        print('Aborted by user')
+        sys.exit(0)

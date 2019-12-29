@@ -1,5 +1,5 @@
-import colorama
 import sys
+import colorama
 
 
 class Cursor:
